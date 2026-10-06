@@ -64,7 +64,9 @@
     "lint": "biome check --error-on-warnings .",
     "lint:fix": "biome check --write .",
     "lint:ci": "biome ci --error-on-warnings .",
-    "check": "bun run lint:ci && bun run test && bun run build && bun run test:dist && bun run test:package",
+    "check:license": "smartin license check",
+    "check:spec": "smartin spec check",
+    "check": "bun run check:license && bun run check:spec && bun run lint:ci && bun run test && bun run build && bun run test:dist && bun run test:package",
     "prepublishOnly": "bun run check"
   },
   "devDependencies": {
@@ -72,6 +74,8 @@
     "@biomejs/biome": "2.5.14",
     "@types/bun": "^1.4.0",
     "@types/node": "^22.12.0",
+    "bun-test-runner": "^0.1.0",
+    "smartin": "^0.2.0",
     "typescript": "^7.0.2"
   },
   "dependencies": {

@@ -31,6 +31,18 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: License Headers
+        shell: bash
+        env:
+          NO_COLOR: "1"
+        run: set -o pipefail; bun run --silent check:license 2>&1 | tee license.txt
+
+      - name: Spec Sync
+        shell: bash
+        env:
+          NO_COLOR: "1"
+        run: set -o pipefail; bun run --silent check:spec 2>&1 | tee spec.txt
+
       - name: Lint
         run: bun run lint:ci
 
@@ -54,9 +66,21 @@ jobs:
             exit 1
           }
 
-      - name: Create Coverage Summary
+      - name: Create Summary
         if: always()
         run: |
+          if [ -f license.txt ]; then
+            echo "### License Headers" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            cat license.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ -f spec.txt ]; then
+            echo "### Spec Sync" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            cat spec.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
           if [ -f coverage.txt ]; then
             echo "### Test Coverage Report" >> $GITHUB_STEP_SUMMARY
             echo '```text' >> $GITHUB_STEP_SUMMARY

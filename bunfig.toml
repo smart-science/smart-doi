@@ -18,4 +18,4 @@ coveragePathIgnorePatterns = [
   "**/tests/**"
 ]
 coverageThreshold = 0.9
-coverageReporter = ["text"]
+coverageReporter = ["text", "lcov"]

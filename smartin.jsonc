@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "eol": "LF", // ["LF", "CRLF"], omitted = LF
+  "license": {
+    "copyright": {
+      "name": "Martin Winkler", // ["Your Name", false = off, omitted = off]
+      "year": "2026", // [2026, "2026", "2025-2026", true = current year, false = off, omitted = off]
+      "email": false // ["your@mail.com", false = off, omitted = off]
+    },
+    "spdx": "Apache-2.0", // ["MIT", false = off, omitted = off]
+    "note": false, // ["text", false = off, omitted = off]
+    "fileHeader": false, // [true = add header with path/to/file, false = off, omitted = off]
+    "filter": ["*.ts", "*.cjs", "*.mjs"], // gitignore syntax, "!" excludes
+    "packageBanner": true // [true = check package.json banner, false = off, omitted = off] - --banner="/*! Copyright <year> <name>... */"
+  },
+  "export": {
+    "filter": ["*.ts", "*.cjs", "*.mjs", "package.json", "tsconfig*.json"] // gitignore syntax, "!" excludes
+  },
+  "spec": {
+    "code": ["src/**/*.ts"], // gitignore syntax, "!" excludes
+    "tests": ["tests/**/*.ts"], // gitignore syntax, "!" excludes, false = off
+    "idLength": 4 // 1-9
+  }
+}

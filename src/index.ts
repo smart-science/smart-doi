@@ -92,8 +92,13 @@ export function doiToSid(input: string): SID | null {
 export function createDoiToSid(sha256: Sha256): DoiToSid {
     assertFunction(sha256);
     const digest: unknown = sha256(SELF_TEST_TEXT);
-    /** @spec 0210: Async guard: `createDoiToSid()` throws `TypeError` if `sha256` returns a thenable. */
+    /** @spec 0210: Async guard: `createDoiToSid()` throws `TypeError` if `sha256` returns a thenable; a rejection of that thenable is handled and raises no `unhandledRejection`. */
     if (typeof (digest as PromiseLike<unknown> | null)?.then === 'function') {
+        try {
+            (digest as PromiseLike<unknown>).then(undefined, () => undefined);
+        } catch {
+            // a thenable whose `then()` throws must not replace the TypeError
+        }
         throw new TypeError('sha256 returns a Promise; use createDoiToSidAsync()');
     }
     assertSelfTest(digest);

@@ -250,6 +250,34 @@ describe('createDoiToSid', () => {
         );
     });
 
+    it('handles the rejection of a Promise returned by sha256', async () => {
+        const unhandled: unknown[] = [];
+        function onUnhandled(reason: unknown) {
+            unhandled.push(reason);
+        }
+        process.on('unhandledRejection', onUnhandled);
+        try {
+            expect(() => createDoiToSid((() => Promise.reject(new Error('hash failed'))) as never)).toThrow(
+                'use createDoiToSidAsync()',
+            );
+            // unhandled rejections are reported after the microtask queue has drained
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            expect(unhandled).toEqual([]);
+        } finally {
+            process.off('unhandledRejection', onUnhandled);
+        }
+    });
+
+    it('throws the TypeError even if then() of the returned thenable throws', () => {
+        const thenable = {
+            // biome-ignore lint/suspicious/noThenProperty: a broken thenable is the case under test
+            then() {
+                throw new Error('then failed');
+            },
+        };
+        expect(() => createDoiToSid((() => thenable) as never)).toThrow('use createDoiToSidAsync()');
+    });
+
     it('propagates errors thrown by sha256', () => {
         const error = new Error('hash failed');
         expect(() =>

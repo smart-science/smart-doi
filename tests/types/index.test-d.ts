@@ -43,6 +43,14 @@ const main: DoiToSid = doiToSid;
 const options: NormalizeDoiOptions = { allowShortDoi: true, keepCasing: true, keepPercentEncoding: true };
 const doi: string | null = normalizeDoi('10.1000/182', options);
 
+// an explicit `undefined` is accepted, also under `exactOptionalPropertyTypes`
+const maybe: { keepCasing?: boolean } = {};
+const passedThrough: NormalizeDoiOptions = {
+    allowShortDoi: undefined,
+    keepCasing: maybe.keepCasing,
+    keepPercentEncoding: undefined,
+};
+
 // @ts-expect-error SID is not a plain string
 const notSid: SID = '10.1000/182';
 // @ts-expect-error result may be null
@@ -60,4 +68,4 @@ doiToSid('10.1000/182', { keepCasing: true });
 // @ts-expect-error created functions take no options
 nodeDoiToSid('10.1000/182', { keepPercentEncoding: true });
 
-void [sid, formatted, nodeSid, bufferDoiToSid, webSid, pending, main, doi, notSid, notNull, notAwaited];
+void [sid, formatted, nodeSid, bufferDoiToSid, webSid, pending, main, doi, passedThrough, notSid, notNull, notAwaited];

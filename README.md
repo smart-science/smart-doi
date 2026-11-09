@@ -42,9 +42,11 @@ Returns `null` if the input contains no valid DOI.
 
 ### 2. Custom Hash & Zero-Dependency Tree-Shaking
 
-To avoid bundling `@noble/hashes` in browser bundles or Node.js services, use `createDoiToSid` or `createDoiToSidAsync` with your platform's native crypto.
+To keep `@noble/hashes` out of your bundle, use `createDoiToSid` or `createDoiToSidAsync` with your platform's native crypto.
 
 Because `package.json` specifies `"sideEffects": false`, modern bundlers (esbuild, Rollup, Vite, Webpack) **tree-shake `@noble/hashes` away completely** when `doiToSid` is not imported.
+
+This applies to bundled code only. `@noble/hashes` stays an installed dependency, and Node.js or Bun without a bundler still load it when the package is imported.
 
 #### Node.js / Bun (`node:crypto`, synchronous)
 
@@ -80,8 +82,13 @@ Both factories run a one-time self-test on creation to ensure the provided funct
 Normalizes a DOI string or URL according to ISO 26324 and DOI Handbook specifications:
 - Drops leading prose, URLs, and schemes (`doi:`, `https://doi.org/`, `http://dx.doi.org/`).
 - Decodes percent-encoding in one pass (`%20` → space, `%2F` → `/`).
+- Converts the DOI to Unicode NFC, so `ä` gives the same result whether it is stored as one character (U+00E4) or as `a` plus a combining mark (U+0308).
 - Lowercases Basic Latin `A-Z` (casing of non-ASCII letters is preserved per spec).
 - Suffix trailing text is preserved without trimming (no lossy URL or bracket stripping).
+
+> **Limitation: `%` in DOI names.** A percent sign followed by two hex digits is always read as a percent-escape.
+> A DOI name that literally contains such a sequence (`10.1000/a%20b`) is therefore decoded when given in plain form (`10.1000/a b`).
+> Pass it percent-encoded instead (`10.1000/a%2520b`), as it appears in a DOI URL. This also applies to `doiToSid()`.
 
 ```ts
 import { normalizeDoi } from '@smart-science/sdoi';
@@ -108,7 +115,7 @@ normalizeDoi(input, {
 
 ### 4. Re-exported SID Utilities
 
-All core utilities from [`@smart-science/sid`](https://github.com/smart-science/smart-id) are re-exported:
+The parsing, formatting and verification utilities of [`@smart-science/sid`](https://github.com/smart-science/smart-id) are re-exported. Its random generators (`generate`, `generateFormatted`) and `CROCKFORD_ALPHABET` are not; import them from `@smart-science/sid` directly.
 
 ```ts
 import {

@@ -61,7 +61,8 @@ const SHAPES: string[] = [
     '10.1000/ΣΑΣ-Straße',
     '10.1000/日本語',
     '10.1000/a😀b',
-    '10.1000/é',
+    // combining mark without a composed form; composable sequences are covered under 'Unicode normalization'
+    '10.1000/x\u0301',
     '10.1000/a b c　d',
     '10.1000/!"#$&\'*+,-.:;=?@_`|~^\\',
     '10.1000/[a]{b}(c)<d>',
@@ -353,6 +354,13 @@ describe('normalizeDoi', () => {
             expect(normalizeDoi(input, null as unknown as NormalizeDoiOptions)).toBe(normalizeDoi(input));
             expect(normalizeDoi(input, {})).toBe(normalizeDoi(input));
             expect(normalizeDoi(input, OPTION_SETS[0])).toBe(normalizeDoi(input));
+            expect(
+                normalizeDoi(input, {
+                    allowShortDoi: undefined,
+                    keepCasing: undefined,
+                    keepPercentEncoding: undefined,
+                }),
+            ).toBe(normalizeDoi(input));
         }
     });
 
@@ -605,7 +613,7 @@ describe('normalizeDoi', () => {
         it('lowercases only Basic Latin A-Z (§4.3.4)', () => {
             expect(normalizeDoi('10.1000/ABC-Ä')).toBe('10.1000/abc-Ä');
             expect(normalizeDoi('10.1000/ΣΑΣ')).toBe('10.1000/ΣΑΣ');
-            expect(normalizeDoi('10.1000/K')).toBe('10.1000/K');
+            expect(normalizeDoi('10.1000/\uff21')).toBe('10.1000/\uff21');
             expect(normalizeDoi('10.1000/İ')).toBe('10.1000/İ');
             expect(normalizeDoi('10.26321/Á')).not.toBe(normalizeDoi('10.26321/á'));
         });

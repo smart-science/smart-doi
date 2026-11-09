@@ -70,9 +70,20 @@ function representations(doi: string): string[] {
     ];
 }
 
-const REPRESENTATIONS: [string, string][] = VECTORS.flatMap(([doi, expected]) =>
-    representations(doi).map((input): [string, string] => [input, expected]),
-);
+/** Decomposed (NFD) and mixed spellings of the vectors with umlauts; written with escapes so the file encoding cannot change them. */
+const DECOMPOSED: [string, string][] = [
+    ['10.1000/ä', 'ZBEG7A1C5NWEFMNJQMV5'],
+    ['https://doi.org/10.1000/a%CC%88', 'ZBEG7A1C5NWEFMNJQMV5'],
+    ['https://doi.org/10.1000/%C3%A4', 'ZBEG7A1C5NWEFMNJQMV5'],
+    ['10.1000/äöü', 'G4XF94KMP3XNTYTKJPCY'],
+    ['DOI: 10.1000/äöü', 'G4XF94KMP3XNTYTKJPCY'],
+    ['https://doi.org/10.1000/a%cc%88o%cc%88u%cc%88', 'G4XF94KMP3XNTYTKJPCY'],
+];
+
+const REPRESENTATIONS: [string, string][] = [
+    ...VECTORS.flatMap(([doi, expected]) => representations(doi).map((input): [string, string] => [input, expected])),
+    ...DECOMPOSED,
+];
 
 const INVALID = [
     '',
@@ -163,6 +174,22 @@ describe('doiToSid', () => {
         expect(withOptions('10/abcde', { allowShortDoi: true })).toBeNull();
     });
 
+    it('derives one SID from canonically equivalent spellings', () => {
+        const groups: string[][] = [
+            ['10.1000/K', '10.1000/K', '10.1000/k'],
+            ['10.1000/Å', '10.1000/Å', '10.1000/Å'],
+            ['10.1000/H̱', '10.1000/ẖ', '10.1000/ẖ'],
+            ['10.1000/ệ', '10.1000/ệ', '10.1000/ệ'],
+            ['10.1000/각', '10.1000/각'],
+        ];
+        const sids = groups.map((group) => new Set(group.map((input) => doiToSid(input))));
+        for (const groupSids of sids) {
+            expect(groupSids.size).toBe(1);
+            expect(groupSids.has(null)).toBe(false);
+        }
+        expect(new Set(sids.flatMap((groupSids) => [...groupSids])).size).toBe(groups.length);
+    });
+
     it('returns a canonical, verifiable SID', () => {
         const result = doiToSid('10.1000/182');
         expect(isSID(result)).toBe(true);
@@ -223,6 +250,34 @@ describe('createDoiToSid', () => {
         );
     });
 
+    it('handles the rejection of a Promise returned by sha256', async () => {
+        const unhandled: unknown[] = [];
+        function onUnhandled(reason: unknown) {
+            unhandled.push(reason);
+        }
+        process.on('unhandledRejection', onUnhandled);
+        try {
+            expect(() => createDoiToSid((() => Promise.reject(new Error('hash failed'))) as never)).toThrow(
+                'use createDoiToSidAsync()',
+            );
+            // unhandled rejections are reported after the microtask queue has drained
+            await new Promise((resolve) => setTimeout(resolve, 20));
+            expect(unhandled).toEqual([]);
+        } finally {
+            process.off('unhandledRejection', onUnhandled);
+        }
+    });
+
+    it('throws the TypeError even if then() of the returned thenable throws', () => {
+        const thenable = {
+            // biome-ignore lint/suspicious/noThenProperty: a broken thenable is the case under test
+            then() {
+                throw new Error('then failed');
+            },
+        };
+        expect(() => createDoiToSid((() => thenable) as never)).toThrow('use createDoiToSidAsync()');
+    });
+
     it('propagates errors thrown by sha256', () => {
         const error = new Error('hash failed');
         expect(() =>
@@ -235,6 +290,25 @@ describe('createDoiToSid', () => {
     it('throws a TypeError if sha256 returns a wrong digest after the self-test', () => {
         expect(() => createDoiToSid(failsAfterSelfTest(new Uint8Array(31)))('10.1000/abc')).toThrow(TypeError);
         expect(() => createDoiToSid(failsAfterSelfTest(new Uint8Array(33)))('10.1000/abc')).toThrow(TypeError);
+    });
+
+    it('throws a TypeError for values that are not an ArrayBuffer or a view', () => {
+        const detached = new ArrayBuffer(32);
+        structuredClone(detached, { transfer: [detached] });
+        const notBuffers: [string, unknown][] = [
+            ['object tagged as ArrayBuffer', { [Symbol.toStringTag]: 'ArrayBuffer', length: 32 }],
+            ['object tagged as ArrayBuffer with byteLength', { [Symbol.toStringTag]: 'ArrayBuffer', byteLength: 32 }],
+            ['SharedArrayBuffer', new SharedArrayBuffer(32)],
+            ['detached ArrayBuffer', detached],
+            ['array of 32 numbers', new Array(32).fill(0)],
+            ['null', null],
+            ['undefined', undefined],
+        ];
+        for (const [name, wrong] of notBuffers) {
+            expect(() => createDoiToSid(failsAfterSelfTest(wrong) as never)('10.1000/abc'), name).toThrow(
+                'sha256 must return a 32-byte Uint8Array or ArrayBuffer',
+            );
+        }
     });
 });
 

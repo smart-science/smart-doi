@@ -13,7 +13,7 @@ Decided behavior and non-obvious details of `@smart-science/sdoi`. Referenced in
 
 ### 1.2 Options
 
-- 🔴 @spec 0105: Options type: `NormalizeDoiOptions`, an object of optional booleans.
+- 🔴 @spec 0105: Options type: `NormalizeDoiOptions`, an object of optional booleans; an explicit `undefined` means the default.
 - 🔴 @spec 0106: `allowShortDoi`: default `false` returns `null` for shortDOIs; `true` accepts them.
 - 🔴 @spec 0107: `keepCasing`: default `false` lowercases Basic Latin `A-Z`; `true` keeps the input casing.
 - 🔴 @spec 0108: `keepPercentEncoding`: default `false` decodes percent-escapes (`%2F`, `%20`, ...); `true` keeps them as literal text.
@@ -46,6 +46,14 @@ Decided behavior and non-obvious details of `@smart-science/sdoi`. Referenced in
 - 🔴 @spec 0121: Unit: each percent-encoded UTF-8 character (1 to 4 escapes) is decoded on its own.
 - 🔴 @spec 0122: Single pass: decoded once; `%2541` yields `%41`.
 - 🔴 @spec 0123: Malformed escapes: kept as-is (lone continuation bytes, truncated, overlong or surrogate sequences, `%` without hex).
+- 🔴 @spec 0124: Literal escapes: a DOI name that itself contains `%` + 2 hex digits is decoded like an escape in plain form (`10.1000/a%20b` yields `10.1000/a b`); pass it percent-encoded (`10.1000/a%2520b`).
+
+### 1.7 Unicode Normalization
+
+- 🔴 @spec 0125: Form: the DOI is converted to Unicode NFC after percent-decoding and before validation; canonically equivalent inputs (`ä` as U+00E4 or as `a` + U+0308) yield the same DOI.
+- 🔴 @spec 0126: Casing order: NFC, then lowercase Basic Latin `A-Z`, then NFC again; `A` + U+0308 yields `Ä`, `H` + U+0331 yields `ẖ`, Kelvin sign U+212A yields `k`.
+- 🔴 @spec 0127: Compatibility characters: kept as-is (NFC, not NFKC); `ﬁ`, `Ａ`, `²` are not replaced.
+- 🔴 @spec 0128: Kept escapes: with `keepPercentEncoding` escapes are literal text and are not normalized.
 
 ## 2. DOI to SID (`index.ts`)
 
@@ -68,10 +76,10 @@ Decided behavior and non-obvious details of `@smart-science/sdoi`. Referenced in
 
 - 🔴 @spec 0208: Hash input: `sha256` receives the normalized DOI as `string` and hashes its UTF-8 encoding.
 - 🔴 @spec 0209: Function check: a non-function `sha256` throws `TypeError` (async factory: rejects).
-- 🔴 @spec 0210: Async guard: `createDoiToSid()` throws `TypeError` if `sha256` returns a thenable.
+- 🔴 @spec 0210: Async guard: `createDoiToSid()` throws `TypeError` if `sha256` returns a thenable; a rejection of that thenable is handled and raises no `unhandledRejection`.
 - 🔴 @spec 0211: Self-test: each factory hashes `10.1000/aä€😀` once; a SID mismatch throws `TypeError` \
                  (catches other algorithms, other encodings and identity functions).
-- 🔴 @spec 0212: Digest type: `ArrayBuffer` or any `ArrayBuffer` view (`Uint8Array`, `Buffer`, ...).
+- 🔴 @spec 0212: Digest type: `ArrayBuffer` or any `ArrayBuffer` view (`Uint8Array`, `Buffer`, ...); `SharedArrayBuffer`, detached buffers and objects that only claim to be an `ArrayBuffer` (`Symbol.toStringTag`) throw `TypeError`.
 - 🔴 @spec 0213: Digest length: exactly 32 bytes; any other digest throws `TypeError`.
 - 🔴 @spec 0214: Cross-realm digests: accepted from iframes, workers and `node:vm`; views are read without copying.
 
@@ -92,7 +100,7 @@ Facts about DOI names, not behavior of this package.
 ### Suffix
 
 - @doi 0007: Suffix character set: unrestricted `ISO/IEC 10646` (Unicode/UTF-8); any printable character.
-- @doi 0008: Can contain: multiple slashes, whitespaces, nbsp, zwsp, hyphens, all forms of brackets `<>`, `()`, `[]`, `{}`, `:`, `,`, `;`, `_`, `-`, `*`, `+`, `=`, `.`, `#` etc.
+- @doi 0008: Can contain: multiple slashes, whitespaces, nbsp, hyphens, all forms of brackets `<>`, `()`, `[]`, `{}`, `:`, `,`, `;`, `_`, `-`, `*`, `+`, `=`, `.`, `#` etc.
 - @doi 0009: Whitespaces in specification; though strongly deprecated; occasionally in legacy DOIs.
 - @doi 0010: Non-standard whitespaces never intentionally used as DOIs: zero-width spaces, non-breaking spaces, zero-width non-breaking spaces/BOM, soft hyphens.
 - @doi 0011: Non-standard whitespaces cannot be strictly normalized to regular whitespace (especially not at the end) as they might be artifacts not part of the actual DOI.

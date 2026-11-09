@@ -56,6 +56,18 @@ const NORMALIZE_OPTIONS: NormalizeDoiOptions = { allowShortDoi: false, keepCasin
 const SELF_TEST_TEXT = '10.1000/aä€\u{1f600}';
 const SELF_TEST_SID = 'P53CD05BTGX8NHGHRQVK';
 
+/** Stateless UTF-8 encoder of `doiToSid()`, created once. */
+const utf8 = /* @__PURE__ */ new TextEncoder();
+
+/**
+ * `ArrayBuffer.prototype.byteLength` getter: reads the internal `ArrayBuffer` slot, so it works across realms and
+ * cannot be spoofed with `Symbol.toStringTag`; throws for any other value.
+ */
+const arrayBufferByteLength: (this: unknown) => unknown = /* @__PURE__ */ Object.getOwnPropertyDescriptor(
+    ArrayBuffer.prototype,
+    'byteLength',
+)?.get as (this: unknown) => unknown;
+
 // -------------------------------------------------------------------
 // 3. Exported Functions
 // -------------------------------------------------------------------
@@ -74,7 +86,7 @@ const SELF_TEST_SID = 'P53CD05BTGX8NHGHRQVK';
 export function doiToSid(input: string): SID | null {
     const doi = normalizeDoi(input, NORMALIZE_OPTIONS);
     /** @spec 0207: Invalid DOI: returns `null` without calling SHA-256. */
-    return doi === null ? null : digestToSid(nobleSha256(new TextEncoder().encode(doi)));
+    return doi === null ? null : digestToSid(nobleSha256(utf8.encode(doi)));
 }
 
 /**
@@ -92,8 +104,13 @@ export function doiToSid(input: string): SID | null {
 export function createDoiToSid(sha256: Sha256): DoiToSid {
     assertFunction(sha256);
     const digest: unknown = sha256(SELF_TEST_TEXT);
-    /** @spec 0210: Async guard: `createDoiToSid()` throws `TypeError` if `sha256` returns a thenable. */
+    /** @spec 0210: Async guard: `createDoiToSid()` throws `TypeError` if `sha256` returns a thenable; a rejection of that thenable is handled and raises no `unhandledRejection`. */
     if (typeof (digest as PromiseLike<unknown> | null)?.then === 'function') {
+        try {
+            (digest as PromiseLike<unknown>).then(undefined, () => undefined);
+        } catch {
+            // a thenable whose `then()` throws must not replace the TypeError
+        }
         throw new TypeError('sha256 returns a Promise; use createDoiToSidAsync()');
     }
     assertSelfTest(digest);
@@ -157,15 +174,18 @@ function digestToSid(digest: unknown): SID {
 
 /**
  * Reads a digest as bytes; `null` for any other value.
- * @spec 0212: Digest type: `ArrayBuffer` or any `ArrayBuffer` view (`Uint8Array`, `Buffer`, ...).
+ * @spec 0212: Digest type: `ArrayBuffer` or any `ArrayBuffer` view (`Uint8Array`, `Buffer`, ...); `SharedArrayBuffer`, detached buffers and objects that only claim to be an `ArrayBuffer` (`Symbol.toStringTag`) throw `TypeError`.
  * @spec 0214: Cross-realm digests: accepted from iframes, workers and `node:vm`; views are read without copying.
  */
 function toBytes(digest: unknown): Uint8Array | null {
     if (ArrayBuffer.isView(digest)) {
         return new Uint8Array(digest.buffer, digest.byteOffset, digest.byteLength);
     }
-    if (Object.prototype.toString.call(digest) === '[object ArrayBuffer]') {
+    try {
+        // throws for everything that is not an ArrayBuffer of any realm; a detached buffer fails in the constructor
+        arrayBufferByteLength.call(digest);
         return new Uint8Array(digest as ArrayBuffer);
+    } catch {
+        return null;
     }
-    return null;
 }

@@ -10,6 +10,9 @@
  *
  * DOI names are case-insensitive for Basic Latin `A-Z` only (§4.3.4) - other letters are kept as-is.
  * Percent-encoding is a URL representation only (§4.7) - the DOI name is the decoded string.
+ * Limitation: a DOI name that itself contains `%` + 2 hex digits (`10.1000/a%20b`) cannot be told apart from an escape.
+ * In plain form it is decoded (`10.1000/a b`); pass it percent-encoded (`10.1000/a%2520b`) to keep it.
+ * Unicode: the DOI is converted to NFC, so composed and decomposed spellings of a character yield the same DOI.
  * shortDOIs (`10/abcde`, `https://doi.org/abcde`, §6.5) are not DOI names: they lack the registrant code.
  */
 
@@ -17,23 +20,23 @@
 // 1. Types
 // -------------------------------------------------------------------
 
-/** @spec 0105: Options type: `NormalizeDoiOptions`, an object of optional booleans. */
+/** @spec 0105: Options type: `NormalizeDoiOptions`, an object of optional booleans; an explicit `undefined` means the default. */
 export type NormalizeDoiOptions = {
     /**
      * Accept shortDOIs (`10/abcde`, `doi.org/abcde`) and return them as `10/<code>`.
      * @spec 0106: `allowShortDoi`: default `false` returns `null` for shortDOIs; `true` accepts them.
      */
-    allowShortDoi?: boolean;
+    allowShortDoi?: boolean | undefined;
     /**
      * Keep the original casing instead of lowercasing Basic Latin `A-Z`.
      * @spec 0107: `keepCasing`: default `false` lowercases Basic Latin `A-Z`; `true` keeps the input casing.
      */
-    keepCasing?: boolean;
+    keepCasing?: boolean | undefined;
     /**
      * Keep percent-escapes as literal characters instead of decoding them.
      * @spec 0108: `keepPercentEncoding`: default `false` decodes percent-escapes (`%2F`, `%20`, ...); `true` keeps them as literal text.
      */
-    keepPercentEncoding?: boolean;
+    keepPercentEncoding?: boolean | undefined;
 };
 
 // -------------------------------------------------------------------
@@ -109,10 +112,19 @@ export function normalizeDoi(input: string, options: NormalizeDoiOptions = {}): 
      * @spec 0112: Leading text: everything before the DOI start is dropped (`doi:`, `https://doi.org/`, prose).
      * @spec 0113: Trailing text: everything from the DOI start on is kept; never trimmed or cut at punctuation (`.`, `,`, `)`).
      */
-    const candidate = decoded.slice(start);
+    /**
+     * @spec 0125: Form: the DOI is converted to Unicode NFC after percent-decoding and before validation; canonically equivalent inputs (`ä` as U+00E4 or as `a` + U+0308) yield the same DOI.
+     * @spec 0127: Compatibility characters: kept as-is (NFC, not NFKC); `ﬁ`, `Ａ`, `²` are not replaced.
+     * @spec 0128: Kept escapes: with `keepPercentEncoding` escapes are literal text and are not normalized.
+     */
+    const composed = decoded.slice(start).normalize('NFC');
+    /**
+     * Lowercasing can leave a composable pair (`h` + U+0331 has a composed form, `H` + U+0331 has none), so NFC runs again.
+     * @spec 0126: Casing order: NFC, then lowercase Basic Latin `A-Z`, then NFC again; `A` + U+0308 yields `Ä`, `H` + U+0331 yields `ẖ`, Kelvin sign U+212A yields `k`.
+     */
     const doi = keepCasing
-        ? candidate
-        : candidate.replace(MATCH_BASIC_LATIN_UPPERCASE, (letters) => letters.toLowerCase());
+        ? composed
+        : composed.replace(MATCH_BASIC_LATIN_UPPERCASE, (letters) => letters.toLowerCase()).normalize('NFC');
     return MATCH_DOI.test(doi) ? doi : null;
 }
 
@@ -123,6 +135,7 @@ export function normalizeDoi(input: string, options: NormalizeDoiOptions = {}): 
 /**
  * Decodes percent-escapes character by character.
  * @spec 0122: Single pass: decoded once; `%2541` yields `%41`.
+ * @spec 0124: Literal escapes: a DOI name that itself contains `%` + 2 hex digits is decoded like an escape in plain form (`10.1000/a%20b` yields `10.1000/a b`); pass it percent-encoded (`10.1000/a%2520b`).
  */
 function percentDecode(input: string): string {
     return input.replace(MATCH_PERCENT_CHARACTER, (escapes) => {

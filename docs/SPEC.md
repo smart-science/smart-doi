@@ -100,7 +100,7 @@ Facts about DOI names, not behavior of this package.
 ### Suffix
 
 - @doi 0007: Suffix character set: unrestricted `ISO/IEC 10646` (Unicode/UTF-8); any printable character.
-- @doi 0008: Can contain: multiple slashes, whitespaces, nbsp, zwsp, hyphens, all forms of brackets `<>`, `()`, `[]`, `{}`, `:`, `,`, `;`, `_`, `-`, `*`, `+`, `=`, `.`, `#` etc.
+- @doi 0008: Can contain: multiple slashes, whitespaces, nbsp, hyphens, all forms of brackets `<>`, `()`, `[]`, `{}`, `:`, `,`, `;`, `_`, `-`, `*`, `+`, `=`, `.`, `#` etc.
 - @doi 0009: Whitespaces in specification; though strongly deprecated; occasionally in legacy DOIs.
 - @doi 0010: Non-standard whitespaces never intentionally used as DOIs: zero-width spaces, non-breaking spaces, zero-width non-breaking spaces/BOM, soft hyphens.
 - @doi 0011: Non-standard whitespaces cannot be strictly normalized to regular whitespace (especially not at the end) as they might be artifacts not part of the actual DOI.

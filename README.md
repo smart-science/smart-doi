@@ -42,9 +42,11 @@ Returns `null` if the input contains no valid DOI.
 
 ### 2. Custom Hash & Zero-Dependency Tree-Shaking
 
-To avoid bundling `@noble/hashes` in browser bundles or Node.js services, use `createDoiToSid` or `createDoiToSidAsync` with your platform's native crypto.
+To keep `@noble/hashes` out of your bundle, use `createDoiToSid` or `createDoiToSidAsync` with your platform's native crypto.
 
 Because `package.json` specifies `"sideEffects": false`, modern bundlers (esbuild, Rollup, Vite, Webpack) **tree-shake `@noble/hashes` away completely** when `doiToSid` is not imported.
+
+This applies to bundled code only. `@noble/hashes` stays an installed dependency, and Node.js or Bun without a bundler still load it when the package is imported.
 
 #### Node.js / Bun (`node:crypto`, synchronous)
 
@@ -113,7 +115,7 @@ normalizeDoi(input, {
 
 ### 4. Re-exported SID Utilities
 
-All core utilities from [`@smart-science/sid`](https://github.com/smart-science/smart-id) are re-exported:
+The parsing, formatting and verification utilities of [`@smart-science/sid`](https://github.com/smart-science/smart-id) are re-exported. Its random generators (`generate`, `generateFormatted`) and `CROCKFORD_ALPHABET` are not; import them from `@smart-science/sid` directly.
 
 ```ts
 import {

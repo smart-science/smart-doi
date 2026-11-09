@@ -56,6 +56,9 @@ const NORMALIZE_OPTIONS: NormalizeDoiOptions = { allowShortDoi: false, keepCasin
 const SELF_TEST_TEXT = '10.1000/aä€\u{1f600}';
 const SELF_TEST_SID = 'P53CD05BTGX8NHGHRQVK';
 
+/** Stateless UTF-8 encoder of `doiToSid()`, created once. */
+const utf8 = /* @__PURE__ */ new TextEncoder();
+
 /**
  * `ArrayBuffer.prototype.byteLength` getter: reads the internal `ArrayBuffer` slot, so it works across realms and
  * cannot be spoofed with `Symbol.toStringTag`; throws for any other value.
@@ -83,7 +86,7 @@ const arrayBufferByteLength: (this: unknown) => unknown = /* @__PURE__ */ Object
 export function doiToSid(input: string): SID | null {
     const doi = normalizeDoi(input, NORMALIZE_OPTIONS);
     /** @spec 0207: Invalid DOI: returns `null` without calling SHA-256. */
-    return doi === null ? null : digestToSid(nobleSha256(new TextEncoder().encode(doi)));
+    return doi === null ? null : digestToSid(nobleSha256(utf8.encode(doi)));
 }
 
 /**

@@ -56,6 +56,15 @@ const NORMALIZE_OPTIONS: NormalizeDoiOptions = { allowShortDoi: false, keepCasin
 const SELF_TEST_TEXT = '10.1000/aä€\u{1f600}';
 const SELF_TEST_SID = 'P53CD05BTGX8NHGHRQVK';
 
+/**
+ * `ArrayBuffer.prototype.byteLength` getter: reads the internal `ArrayBuffer` slot, so it works across realms and
+ * cannot be spoofed with `Symbol.toStringTag`; throws for any other value.
+ */
+const arrayBufferByteLength: (this: unknown) => unknown = /* @__PURE__ */ Object.getOwnPropertyDescriptor(
+    ArrayBuffer.prototype,
+    'byteLength',
+)?.get as (this: unknown) => unknown;
+
 // -------------------------------------------------------------------
 // 3. Exported Functions
 // -------------------------------------------------------------------
@@ -162,15 +171,18 @@ function digestToSid(digest: unknown): SID {
 
 /**
  * Reads a digest as bytes; `null` for any other value.
- * @spec 0212: Digest type: `ArrayBuffer` or any `ArrayBuffer` view (`Uint8Array`, `Buffer`, ...).
+ * @spec 0212: Digest type: `ArrayBuffer` or any `ArrayBuffer` view (`Uint8Array`, `Buffer`, ...); `SharedArrayBuffer`, detached buffers and objects that only claim to be an `ArrayBuffer` (`Symbol.toStringTag`) throw `TypeError`.
  * @spec 0214: Cross-realm digests: accepted from iframes, workers and `node:vm`; views are read without copying.
  */
 function toBytes(digest: unknown): Uint8Array | null {
     if (ArrayBuffer.isView(digest)) {
         return new Uint8Array(digest.buffer, digest.byteOffset, digest.byteLength);
     }
-    if (Object.prototype.toString.call(digest) === '[object ArrayBuffer]') {
+    try {
+        // throws for everything that is not an ArrayBuffer of any realm; a detached buffer fails in the constructor
+        arrayBufferByteLength.call(digest);
         return new Uint8Array(digest as ArrayBuffer);
+    } catch {
+        return null;
     }
-    return null;
 }

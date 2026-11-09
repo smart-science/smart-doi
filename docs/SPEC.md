@@ -79,7 +79,7 @@ Decided behavior and non-obvious details of `@smart-science/sdoi`. Referenced in
 - 🔴 @spec 0210: Async guard: `createDoiToSid()` throws `TypeError` if `sha256` returns a thenable; a rejection of that thenable is handled and raises no `unhandledRejection`.
 - 🔴 @spec 0211: Self-test: each factory hashes `10.1000/aä€😀` once; a SID mismatch throws `TypeError` \
                  (catches other algorithms, other encodings and identity functions).
-- 🔴 @spec 0212: Digest type: `ArrayBuffer` or any `ArrayBuffer` view (`Uint8Array`, `Buffer`, ...).
+- 🔴 @spec 0212: Digest type: `ArrayBuffer` or any `ArrayBuffer` view (`Uint8Array`, `Buffer`, ...); `SharedArrayBuffer`, detached buffers and objects that only claim to be an `ArrayBuffer` (`Symbol.toStringTag`) throw `TypeError`.
 - 🔴 @spec 0213: Digest length: exactly 32 bytes; any other digest throws `TypeError`.
 - 🔴 @spec 0214: Cross-realm digests: accepted from iframes, workers and `node:vm`; views are read without copying.
 

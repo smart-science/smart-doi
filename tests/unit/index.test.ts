@@ -291,6 +291,25 @@ describe('createDoiToSid', () => {
         expect(() => createDoiToSid(failsAfterSelfTest(new Uint8Array(31)))('10.1000/abc')).toThrow(TypeError);
         expect(() => createDoiToSid(failsAfterSelfTest(new Uint8Array(33)))('10.1000/abc')).toThrow(TypeError);
     });
+
+    it('throws a TypeError for values that are not an ArrayBuffer or a view', () => {
+        const detached = new ArrayBuffer(32);
+        structuredClone(detached, { transfer: [detached] });
+        const notBuffers: [string, unknown][] = [
+            ['object tagged as ArrayBuffer', { [Symbol.toStringTag]: 'ArrayBuffer', length: 32 }],
+            ['object tagged as ArrayBuffer with byteLength', { [Symbol.toStringTag]: 'ArrayBuffer', byteLength: 32 }],
+            ['SharedArrayBuffer', new SharedArrayBuffer(32)],
+            ['detached ArrayBuffer', detached],
+            ['array of 32 numbers', new Array(32).fill(0)],
+            ['null', null],
+            ['undefined', undefined],
+        ];
+        for (const [name, wrong] of notBuffers) {
+            expect(() => createDoiToSid(failsAfterSelfTest(wrong) as never)('10.1000/abc'), name).toThrow(
+                'sha256 must return a 32-byte Uint8Array or ArrayBuffer',
+            );
+        }
+    });
 });
 
 describe('createDoiToSidAsync', () => {

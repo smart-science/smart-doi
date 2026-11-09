@@ -6,7 +6,7 @@
       "name": "@smart-science/sdoi",
       "dependencies": {
         "@noble/hashes": "^2.4.0",
-        "@smart-science/sid": ">=0.3.0 <1.0.0",
+        "@smart-science/sid": "^0.3.1",
       },
       "devDependencies": {
         "@arethetypeswrong/cli": "^0.18.5",
@@ -54,7 +54,7 @@
 
     "@sindresorhus/is": ["@sindresorhus/is@4.6.0", "", {}, "sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw=="],
 
-    "@smart-science/sid": ["@smart-science/sid@0.3.0", "", {}, "sha512-+LAadEuKtAdk6/9UZYcqTbF/mr+btdO3DGghq92aM5Yakt80vnQ3GnQEGmKUR86BZgINMhBETuwPKcKVNMCBMQ=="],
+    "@smart-science/sid": ["@smart-science/sid@0.3.1", "", {}, "sha512-d6wi+DLIVUyjclp9xbz6Ji28w0jJN+ir/v7y+iPtEImQux8EycQHsvRZUmhf0CBTqfkbpsVGJgLGozNt3aIf3Q=="],
 
     "@types/bun": ["@types/bun@1.4.2", "", { "dependencies": { "bun-types": "1.4.2" } }, "sha512-GimotNn7+ZV0uVArItBbriZsR1oNf0+WTzPkdcFrzShI7k2norL0uzEaJT8T33dWr7O/c9ZDuAFQrctKCi72oQ=="],
 

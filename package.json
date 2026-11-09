@@ -80,6 +80,6 @@
   },
   "dependencies": {
     "@noble/hashes": "^2.4.0",
-    "@smart-science/sid": ">=0.3.0 <1.0.0"
+    "@smart-science/sid": "^0.3.1"
   }
 }

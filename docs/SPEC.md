@@ -13,7 +13,7 @@ Decided behavior and non-obvious details of `@smart-science/sdoi`. Referenced in
 
 ### 1.2 Options
 
-- 🔴 @spec 0105: Options type: `NormalizeDoiOptions`, an object of optional booleans.
+- 🔴 @spec 0105: Options type: `NormalizeDoiOptions`, an object of optional booleans; an explicit `undefined` means the default.
 - 🔴 @spec 0106: `allowShortDoi`: default `false` returns `null` for shortDOIs; `true` accepts them.
 - 🔴 @spec 0107: `keepCasing`: default `false` lowercases Basic Latin `A-Z`; `true` keeps the input casing.
 - 🔴 @spec 0108: `keepPercentEncoding`: default `false` decodes percent-escapes (`%2F`, `%20`, ...); `true` keeps them as literal text.

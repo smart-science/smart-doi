@@ -354,6 +354,13 @@ describe('normalizeDoi', () => {
             expect(normalizeDoi(input, null as unknown as NormalizeDoiOptions)).toBe(normalizeDoi(input));
             expect(normalizeDoi(input, {})).toBe(normalizeDoi(input));
             expect(normalizeDoi(input, OPTION_SETS[0])).toBe(normalizeDoi(input));
+            expect(
+                normalizeDoi(input, {
+                    allowShortDoi: undefined,
+                    keepCasing: undefined,
+                    keepPercentEncoding: undefined,
+                }),
+            ).toBe(normalizeDoi(input));
         }
     });
 

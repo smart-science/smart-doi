@@ -20,23 +20,23 @@
 // 1. Types
 // -------------------------------------------------------------------
 
-/** @spec 0105: Options type: `NormalizeDoiOptions`, an object of optional booleans. */
+/** @spec 0105: Options type: `NormalizeDoiOptions`, an object of optional booleans; an explicit `undefined` means the default. */
 export type NormalizeDoiOptions = {
     /**
      * Accept shortDOIs (`10/abcde`, `doi.org/abcde`) and return them as `10/<code>`.
      * @spec 0106: `allowShortDoi`: default `false` returns `null` for shortDOIs; `true` accepts them.
      */
-    allowShortDoi?: boolean;
+    allowShortDoi?: boolean | undefined;
     /**
      * Keep the original casing instead of lowercasing Basic Latin `A-Z`.
      * @spec 0107: `keepCasing`: default `false` lowercases Basic Latin `A-Z`; `true` keeps the input casing.
      */
-    keepCasing?: boolean;
+    keepCasing?: boolean | undefined;
     /**
      * Keep percent-escapes as literal characters instead of decoding them.
      * @spec 0108: `keepPercentEncoding`: default `false` decodes percent-escapes (`%2F`, `%20`, ...); `true` keeps them as literal text.
      */
-    keepPercentEncoding?: boolean;
+    keepPercentEncoding?: boolean | undefined;
 };
 
 // -------------------------------------------------------------------

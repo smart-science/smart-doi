@@ -80,8 +80,13 @@ Both factories run a one-time self-test on creation to ensure the provided funct
 Normalizes a DOI string or URL according to ISO 26324 and DOI Handbook specifications:
 - Drops leading prose, URLs, and schemes (`doi:`, `https://doi.org/`, `http://dx.doi.org/`).
 - Decodes percent-encoding in one pass (`%20` → space, `%2F` → `/`).
+- Converts the DOI to Unicode NFC, so `ä` gives the same result whether it is stored as one character (U+00E4) or as `a` plus a combining mark (U+0308).
 - Lowercases Basic Latin `A-Z` (casing of non-ASCII letters is preserved per spec).
 - Suffix trailing text is preserved without trimming (no lossy URL or bracket stripping).
+
+> **Limitation: `%` in DOI names.** A percent sign followed by two hex digits is always read as a percent-escape.
+> A DOI name that literally contains such a sequence (`10.1000/a%20b`) is therefore decoded when given in plain form (`10.1000/a b`).
+> Pass it percent-encoded instead (`10.1000/a%2520b`), as it appears in a DOI URL. This also applies to `doiToSid()`.
 
 ```ts
 import { normalizeDoi } from '@smart-science/sdoi';

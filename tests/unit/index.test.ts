@@ -70,9 +70,20 @@ function representations(doi: string): string[] {
     ];
 }
 
-const REPRESENTATIONS: [string, string][] = VECTORS.flatMap(([doi, expected]) =>
-    representations(doi).map((input): [string, string] => [input, expected]),
-);
+/** Decomposed (NFD) and mixed spellings of the vectors with umlauts; written with escapes so the file encoding cannot change them. */
+const DECOMPOSED: [string, string][] = [
+    ['10.1000/ä', 'ZBEG7A1C5NWEFMNJQMV5'],
+    ['https://doi.org/10.1000/a%CC%88', 'ZBEG7A1C5NWEFMNJQMV5'],
+    ['https://doi.org/10.1000/%C3%A4', 'ZBEG7A1C5NWEFMNJQMV5'],
+    ['10.1000/äöü', 'G4XF94KMP3XNTYTKJPCY'],
+    ['DOI: 10.1000/äöü', 'G4XF94KMP3XNTYTKJPCY'],
+    ['https://doi.org/10.1000/a%cc%88o%cc%88u%cc%88', 'G4XF94KMP3XNTYTKJPCY'],
+];
+
+const REPRESENTATIONS: [string, string][] = [
+    ...VECTORS.flatMap(([doi, expected]) => representations(doi).map((input): [string, string] => [input, expected])),
+    ...DECOMPOSED,
+];
 
 const INVALID = [
     '',
@@ -161,6 +172,22 @@ describe('doiToSid', () => {
         const withOptions = doiToSid as (input: string, options: object) => sid.SID | null;
         expect(withOptions('10.1000/ABC', { keepCasing: true })).toBe('N3C77HSZ53MZRTE0S9Q7' as sid.SID);
         expect(withOptions('10/abcde', { allowShortDoi: true })).toBeNull();
+    });
+
+    it('derives one SID from canonically equivalent spellings', () => {
+        const groups: string[][] = [
+            ['10.1000/K', '10.1000/K', '10.1000/k'],
+            ['10.1000/Å', '10.1000/Å', '10.1000/Å'],
+            ['10.1000/H̱', '10.1000/ẖ', '10.1000/ẖ'],
+            ['10.1000/ệ', '10.1000/ệ', '10.1000/ệ'],
+            ['10.1000/각', '10.1000/각'],
+        ];
+        const sids = groups.map((group) => new Set(group.map((input) => doiToSid(input))));
+        for (const groupSids of sids) {
+            expect(groupSids.size).toBe(1);
+            expect(groupSids.has(null)).toBe(false);
+        }
+        expect(new Set(sids.flatMap((groupSids) => [...groupSids])).size).toBe(groups.length);
     });
 
     it('returns a canonical, verifiable SID', () => {

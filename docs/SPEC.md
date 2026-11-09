@@ -46,6 +46,14 @@ Decided behavior and non-obvious details of `@smart-science/sdoi`. Referenced in
 - 🔴 @spec 0121: Unit: each percent-encoded UTF-8 character (1 to 4 escapes) is decoded on its own.
 - 🔴 @spec 0122: Single pass: decoded once; `%2541` yields `%41`.
 - 🔴 @spec 0123: Malformed escapes: kept as-is (lone continuation bytes, truncated, overlong or surrogate sequences, `%` without hex).
+- 🔴 @spec 0124: Literal escapes: a DOI name that itself contains `%` + 2 hex digits is decoded like an escape in plain form (`10.1000/a%20b` yields `10.1000/a b`); pass it percent-encoded (`10.1000/a%2520b`).
+
+### 1.7 Unicode Normalization
+
+- 🔴 @spec 0125: Form: the DOI is converted to Unicode NFC after percent-decoding and before validation; canonically equivalent inputs (`ä` as U+00E4 or as `a` + U+0308) yield the same DOI.
+- 🔴 @spec 0126: Casing order: NFC, then lowercase Basic Latin `A-Z`, then NFC again; `A` + U+0308 yields `Ä`, `H` + U+0331 yields `ẖ`, Kelvin sign U+212A yields `k`.
+- 🔴 @spec 0127: Compatibility characters: kept as-is (NFC, not NFKC); `ﬁ`, `Ａ`, `²` are not replaced.
+- 🔴 @spec 0128: Kept escapes: with `keepPercentEncoding` escapes are literal text and are not normalized.
 
 ## 2. DOI to SID (`index.ts`)
 
